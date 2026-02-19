@@ -1,0 +1,836 @@
+import { useState, useEffect, useRef } from "react";
+
+// ─── Data ───────────────────────────────────────────────────────────────────
+
+const COMPETITIONS = [
+  { id: "imo", name: "IMO", fullName: "International Mathematical Olympiad", flag: "🌍" },
+  { id: "conesul", name: "Cone Sul", fullName: "Olimpíada de Matemática do Cone Sul", flag: "🇸🇦" },
+  { id: "obn", name: "OBMEP", fullName: "Olimpíada Brasileira de Matemática", flag: "🇧🇷" },
+  { id: "cno", name: "China MO", fullName: "Chinese Mathematical Olympiad", flag: "🇨🇳" },
+  { id: "usamo", name: "USAMO", fullName: "United States of America MO", flag: "🇺🇸" },
+  { id: "putnam", name: "Putnam", fullName: "William Lowell Putnam Competition", flag: "🎓" },
+  { id: "balkan", name: "Balkan MO", fullName: "Balkan Mathematical Olympiad", flag: "🏛️" },
+  { id: "ibero", name: "Ibero MO", fullName: "Iberoamerican Mathematical Olympiad", flag: "🌎" },
+];
+
+const YEARS = Array.from({ length: 30 }, (_, i) => 2024 - i);
+
+const PROBLEMS_COUNT = {
+  imo: 6, conesul: 6, obn: 6, cno: 6, usamo: 6, putnam: 12, balkan: 4, ibero: 6,
+};
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a28;
+    --border: #2a2a40;
+    --accent: #f0c040;
+    --accent2: #6060f0;
+    --text: #e8e8f0;
+    --muted: #6868a0;
+    --success: #40d080;
+    --danger: #f04060;
+    --radius: 12px;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; min-height: 100vh; }
+  .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+  .header {
+    background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; vertical-align: middle; }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .user-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px;
+    font-size: 0.78rem; color: var(--accent); cursor: pointer; transition: all 0.2s;
+  }
+  .user-chip:hover { border-color: var(--accent); }
+  .nav-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+  }
+  .nav-btn:hover { color: var(--text); border-color: var(--text); }
+  .nav-btn.active { color: var(--accent); border-color: var(--accent); }
+
+  .content { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+  /* Auth */
+  .auth-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(96,96,240,0.08) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, rgba(240,192,64,0.06) 0%, transparent 50%);
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 3rem; width: 380px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+  }
+  .auth-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.3rem; }
+  .auth-sub { color: var(--muted); font-size: 0.8rem; margin-bottom: 2rem; }
+  .auth-tabs { display: flex; margin-bottom: 2rem; background: var(--surface2); border-radius: 8px; padding: 4px; }
+  .auth-tab {
+    flex: 1; padding: 8px; text-align: center; cursor: pointer; border-radius: 6px;
+    font-size: 0.8rem; color: var(--muted); transition: all 0.2s; border: none; background: none;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .auth-tab.active { background: var(--accent); color: #000; font-weight: 500; }
+  .field { margin-bottom: 1.2rem; }
+  .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .field input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 0.9rem;
+    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent2); }
+  .btn-primary {
+    width: 100%; padding: 12px; background: var(--accent); color: #000;
+    border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .btn-primary:hover { background: #f5d060; transform: translateY(-1px); }
+  .error-msg { color: var(--danger); font-size: 0.78rem; margin-top: 1rem; text-align: center; }
+
+  /* Breadcrumb */
+  .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; color: var(--muted); font-size: 0.78rem; }
+  .breadcrumb-item { cursor: pointer; transition: color 0.2s; }
+  .breadcrumb-item:hover { color: var(--accent); }
+  .breadcrumb-sep { color: var(--border); }
+  .breadcrumb-current { color: var(--text); }
+
+  .section-header { margin-bottom: 1.5rem; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; }
+  .section-sub { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+
+  /* Competition Grid */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+  .comp-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .comp-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--accent2) 0%, transparent 100%);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .comp-card:hover { border-color: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(96,96,240,0.15); }
+  .comp-card:hover::before { opacity: 0.05; }
+  .comp-flag { font-size: 2rem; margin-bottom: 0.8rem; }
+  .comp-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
+  .comp-full { color: var(--muted); font-size: 0.72rem; margin-top: 4px; }
+  .comp-progress { margin-top: 1rem; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; transition: width 0.5s; }
+  .progress-label { font-size: 0.7rem; color: var(--muted); display: flex; justify-content: space-between; }
+
+  /* Year Grid */
+  .year-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+  .year-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.2rem 1rem; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+  }
+  .year-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .year-num { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; }
+  .year-done { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+  .year-dots { display: flex; justify-content: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
+  .dot.done { background: var(--success); box-shadow: 0 0 6px rgba(64,208,128,0.5); }
+  .dot.has-solution { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Problem Grid */
+  .problem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
+  .problem-card {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; cursor: pointer;
+    transition: all 0.25s; text-align: center; position: relative;
+  }
+  .problem-card.done {
+    border-color: var(--success);
+    background: linear-gradient(135deg, rgba(64,208,128,0.08), var(--surface));
+  }
+  .problem-card:not(.done):hover { border-color: var(--accent2); transform: scale(1.03); }
+  .problem-card.done:hover { transform: scale(1.03); }
+  .problem-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; }
+  .problem-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .problem-check { font-size: 1.5rem; margin-top: 0.5rem; }
+  .solution-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(240,192,64,0.15); border: 1px solid rgba(240,192,64,0.4);
+    color: var(--accent); border-radius: 6px;
+    font-size: 0.62rem; padding: 2px 7px; font-weight: 700; letter-spacing: 0.5px;
+  }
+
+  /* Leaderboard */
+  .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .lb-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr repeat(4,80px); gap: 1rem; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .lb-row { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr repeat(4,80px); gap: 1rem; align-items: center; transition: background 0.2s; }
+  .lb-row:hover { background: var(--surface2); }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--muted); }
+  .lb-rank.gold { color: #f0c040; }
+  .lb-rank.silver { color: #c0c0d0; }
+  .lb-rank.bronze { color: #c08040; }
+  .lb-name { font-weight: 500; }
+  .lb-score { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--accent); text-align: right; }
+  .lb-stat { font-size: 0.8rem; color: var(--muted); text-align: right; }
+  .lb-me { background: rgba(96,96,240,0.06); }
+
+  /* Profile */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; color: var(--accent); }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+    background: var(--success); color: #000; border-radius: 10px;
+    padding: 12px 20px; font-size: 0.82rem; font-weight: 600;
+    animation: slideUp 0.3s ease; box-shadow: 0 8px 32px rgba(64,208,128,0.3);
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px); animation: fadeIn 0.15s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; width: 520px; max-width: calc(100vw - 2rem);
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    animation: popIn 0.2s ease;
+  }
+  @keyframes popIn { from { transform: scale(0.95); opacity: 0; } }
+  .modal-header {
+    padding: 1.8rem 2rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+  .modal-sub { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
+  .modal-close {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+  }
+  .modal-close:hover { border-color: var(--text); color: var(--text); }
+  .modal-body { padding: 1.5rem 2rem 2rem; }
+
+  .solve-toggle {
+    display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem;
+    background: var(--surface2); border-radius: 12px; cursor: pointer;
+    border: 2px solid var(--border); transition: all 0.2s; margin-bottom: 1.5rem;
+    user-select: none;
+  }
+  .solve-toggle.done { border-color: var(--success); background: rgba(64,208,128,0.07); }
+  .solve-toggle:hover { border-color: var(--accent2); }
+  .solve-toggle.done:hover { border-color: var(--success); filter: brightness(1.05); }
+  .toggle-circle {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-size: 0.9rem; transition: all 0.2s;
+  }
+  .solve-toggle.done .toggle-circle { border-color: var(--success); background: var(--success); color: #000; }
+  .toggle-text { flex: 1; }
+  .toggle-label { font-size: 0.9rem; font-weight: 500; }
+  .toggle-hint { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  .solution-divider {
+    font-size: 0.72rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .solution-divider::before, .solution-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .sol-type-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .sol-type-btn {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+  }
+  .sol-type-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(96,96,240,0.08); }
+
+  .sol-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s;
+    margin-bottom: 0.8rem;
+  }
+  .sol-input:focus { border-color: var(--accent2); }
+
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 0.8rem; position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent2); background: rgba(96,96,240,0.05); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .drop-text { font-size: 0.82rem; color: var(--muted); }
+  .drop-hint { font-size: 0.7rem; color: var(--border); margin-top: 6px; }
+
+  .img-preview { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 0.8rem; }
+  .img-preview img { width: 100%; max-height: 300px; object-fit: contain; background: #060609; display: block; }
+  .img-preview-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: var(--surface2); font-size: 0.72rem; color: var(--muted);
+  }
+
+  .link-preview {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 0.8rem; font-size: 0.78rem;
+  }
+  .link-preview a { color: var(--accent2); text-decoration: none; word-break: break-all; flex: 1; }
+  .link-preview a:hover { text-decoration: underline; }
+
+  .btn-remove {
+    background: rgba(240,64,96,0.12); border: 1px solid rgba(240,64,96,0.3);
+    color: var(--danger); border-radius: 6px; padding: 3px 10px; cursor: pointer;
+    font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-remove:hover { background: rgba(240,64,96,0.22); }
+
+  .modal-actions { display: flex; gap: 0.8rem; margin-top: 1.4rem; }
+  .btn-save {
+    flex: 1; padding: 10px; background: var(--accent2); color: #fff;
+    border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+  }
+  .btn-save:hover { background: #7575ff; }
+  .btn-ghost {
+    padding: 10px 16px; background: none; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem;
+    cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+`;
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+async function storageGet(key, shared = false) {
+  try { const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
+  catch { return null; }
+}
+async function storageSet(key, val, shared = false) {
+  try { await window.storage.set(key, JSON.stringify(val), shared); } catch {}
+}
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState("tracker");
+  const [solved, setSolved] = useState({});
+  const [solutions, setSolutions] = useState({});
+  const [nav, setNav] = useState({ comp: null, year: null });
+  const [toast, setToast] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [modalProblem, setModalProblem] = useState(null);
+
+  useEffect(() => {
+    storageGet("session").then(s => { if (s) { setUser(s); loadUserData(s.username); } });
+    loadLeaderboard();
+  }, []);
+
+  async function loadUserData(username) {
+    const s = await storageGet(`solved:${username}`);
+    const sol = await storageGet(`solutions:${username}`);
+    setSolved(s || {});
+    setSolutions(sol || {});
+  }
+
+  async function loadLeaderboard() {
+    const users = await storageGet("users", true);
+    if (users) setAllUsers(users);
+  }
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  }
+
+  async function handleLogin(username, password, isRegister) {
+    const users = (await storageGet("users", true)) || [];
+    const existing = users.find(u => u.username === username);
+    if (isRegister) {
+      if (existing) return "Username already taken";
+      const newUsers = [...users, { username, password, joined: Date.now() }];
+      await storageSet("users", newUsers, true);
+      setUser({ username });
+      await storageSet("session", { username });
+      setSolved({}); setSolutions({});
+      setAllUsers(newUsers);
+      return null;
+    } else {
+      if (!existing || existing.password !== password) return "Invalid credentials";
+      setUser({ username });
+      await storageSet("session", { username });
+      await loadUserData(username);
+      setAllUsers(users);
+      return null;
+    }
+  }
+
+  async function handleLogout() {
+    await storageSet("session", null);
+    setUser(null); setSolved({}); setSolutions({}); setNav({ comp: null, year: null });
+  }
+
+  async function saveProblem({ compId, year, num, isDone, solution }) {
+    const key = `${compId}-${year}-${num}`;
+    const prevDone = !!solved[key];
+
+    const newSolved = { ...solved, [key]: isDone };
+    const newSolutions = { ...solutions };
+    if (solution) newSolutions[key] = solution;
+    else delete newSolutions[key];
+
+    setSolved(newSolved);
+    setSolutions(newSolutions);
+    await storageSet(`solved:${user.username}`, newSolved);
+    await storageSet(`solutions:${user.username}`, newSolutions);
+
+    if (isDone && !prevDone) showToast(`✓ Problem ${num} marked as solved!`);
+    else if (!isDone && prevDone) showToast(`Problem ${num} unmarked.`);
+    else if (solution?.type === "image") showToast("📷 Solution image saved!");
+    else if (solution?.type === "link") showToast("🔗 Solution link saved!");
+    else showToast("Saved.");
+
+    const users = (await storageGet("users", true)) || [];
+    const total = Object.values(newSolved).filter(Boolean).length;
+    const updated = users.map(u => u.username === user.username ? { ...u, total } : u);
+    await storageSet("users", updated, true);
+    setAllUsers(updated);
+    setModalProblem(null);
+  }
+
+  function getSolvedCount(compId, year) {
+    const n = PROBLEMS_COUNT[compId] || 6;
+    return Array.from({ length: n }, (_, i) => i + 1).filter(n => solved[`${compId}-${year}-${n}`]).length;
+  }
+
+  function getCompTotal(compId) {
+    return Object.keys(solved).filter(k => k.startsWith(compId) && solved[k]).length;
+  }
+
+  if (!user) return <AuthScreen onLogin={handleLogin} />;
+
+  const sorted = [...allUsers].sort((a, b) => (b.total || 0) - (a.total || 0));
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="app">
+        <header className="header">
+          <div className="logo">Olympic Journey</div>
+          <div className="header-right">
+            <button className={`nav-btn ${view === "tracker" ? "active" : ""}`} onClick={() => setView("tracker")}>Problems</button>
+            <button className={`nav-btn ${view === "leaderboard" ? "active" : ""}`} onClick={() => { setView("leaderboard"); loadLeaderboard(); }}>Leaderboard</button>
+            <button className={`nav-btn ${view === "profile" ? "active" : ""}`} onClick={() => setView("profile")}>Profile</button>
+            <div className="user-chip" onClick={handleLogout}>⬡ {user.username} · logout</div>
+          </div>
+        </header>
+        <div className="content">
+          {view === "tracker" && (
+            <TrackerView
+              nav={nav} setNav={setNav}
+              solved={solved} solutions={solutions}
+              onOpenProblem={setModalProblem}
+              getSolvedCount={getSolvedCount}
+              getCompTotal={getCompTotal}
+            />
+          )}
+          {view === "leaderboard" && <LeaderboardView users={sorted} me={user.username} />}
+          {view === "profile" && <ProfileView username={user.username} solved={solved} solutions={solutions} />}
+        </div>
+      </div>
+
+      {modalProblem && (
+        <ProblemModal
+          {...modalProblem}
+          isDone={!!solved[`${modalProblem.compId}-${modalProblem.year}-${modalProblem.num}`]}
+          solution={solutions[`${modalProblem.compId}-${modalProblem.year}-${modalProblem.num}`]}
+          onSave={saveProblem}
+          onClose={() => setModalProblem(null)}
+        />
+      )}
+      {toast && <div className="toast">{toast}</div>}
+    </>
+  );
+}
+
+// ─── Problem Modal ────────────────────────────────────────────────────────────
+
+function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolution, onSave, onClose }) {
+  const comp = COMPETITIONS.find(c => c.id === compId);
+  const [isDone, setIsDone] = useState(initDone);
+  const [solType, setSolType] = useState(initSolution?.type || "image");
+  const [linkVal, setLinkVal] = useState(initSolution?.type === "link" ? initSolution.data : "");
+  const [imageData, setImageData] = useState(initSolution?.type === "image" ? initSolution.data : null);
+  const [imageName, setImageName] = useState(initSolution?.type === "image" ? (initSolution.name || "image") : "");
+  const [drag, setDrag] = useState(false);
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = e => { setImageData(e.target.result); setImageName(file.name); };
+    reader.readAsDataURL(file);
+  }
+
+  function buildSolution() {
+    if (solType === "link" && linkVal.trim()) return { type: "link", data: linkVal.trim() };
+    if (solType === "image" && imageData) return { type: "image", data: imageData, name: imageName };
+    return null;
+  }
+
+  function handleSave() {
+    onSave({ compId, year, num, isDone, solution: buildSolution() });
+  }
+
+  function handleRemoveSolution() {
+    setImageData(null); setImageName(""); setLinkVal("");
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <div>
+            <div className="modal-title">{comp.flag} {comp.name} — Problem {num}</div>
+            <div className="modal-sub">{year} · {comp.fullName}</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className={`solve-toggle ${isDone ? "done" : ""}`} onClick={() => setIsDone(d => !d)}>
+            <div className="toggle-circle">{isDone ? "✓" : ""}</div>
+            <div className="toggle-text">
+              <div className="toggle-label">{isDone ? "Marked as solved" : "Mark as solved"}</div>
+              <div className="toggle-hint">{isDone ? "Click to unmark" : "Click to mark this problem as done"}</div>
+            </div>
+          </div>
+
+          <div className="solution-divider">Attach solution (optional)</div>
+
+          <div className="sol-type-tabs">
+            <button className={`sol-type-btn ${solType === "image" ? "active" : ""}`} onClick={() => setSolType("image")}>📷 Image</button>
+            <button className={`sol-type-btn ${solType === "link" ? "active" : ""}`} onClick={() => setSolType("link")}>🔗 Link</button>
+          </div>
+
+          {solType === "image" && (
+            imageData ? (
+              <div className="img-preview">
+                <img src={imageData} alt="solution" />
+                <div className="img-preview-bar">
+                  <span>{imageName}</span>
+                  <button className="btn-remove" onClick={handleRemoveSolution}>Remove</button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`drop-zone ${drag ? "dragging" : ""}`}
+                onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}
+              >
+                <input type="file" accept="image/*" onChange={e => handleFile(e.target.files[0])} />
+                <div className="drop-icon">🖼️</div>
+                <div className="drop-text">Drop an image or click to browse</div>
+                <div className="drop-hint">PNG, JPG, WEBP · your solution photo or scan</div>
+              </div>
+            )
+          )}
+
+          {solType === "link" && (
+            <>
+              <input
+                className="sol-input"
+                placeholder="https://artofproblemsolving.com/..."
+                value={linkVal}
+                onChange={e => setLinkVal(e.target.value)}
+              />
+              {linkVal.trim() && (
+                <div className="link-preview">
+                  <span>🔗</span>
+                  <a href={linkVal} target="_blank" rel="noopener noreferrer">{linkVal}</a>
+                  <button className="btn-remove" onClick={handleRemoveSolution}>Remove</button>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="modal-actions">
+            <button className="btn-save" onClick={handleSave}>Save</button>
+            <button className="btn-ghost" onClick={onClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+function AuthScreen({ onLogin }) {
+  const [tab, setTab] = useState("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  async function submit() {
+    if (!username || !password) { setError("Fill in all fields"); return; }
+    const err = await onLogin(username, password, tab === "register");
+    if (err) setError(err);
+  }
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="auth-wrap">
+        <div className="auth-card">
+          <div className="auth-title">Olympic Journey</div>
+          <div className="auth-sub">Track your olympiad journey</div>
+          <div className="auth-tabs">
+            <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setError(""); }}>Login</button>
+            <button className={`auth-tab ${tab === "register" ? "active" : ""}`} onClick={() => { setTab("register"); setError(""); }}>Register</button>
+          </div>
+          <div className="field"><label>Username</label>
+            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_handle" onKeyDown={e => e.key === "Enter" && submit()} />
+          </div>
+          <div className="field"><label>Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && submit()} />
+          </div>
+          <button className="btn-primary" onClick={submit}>{tab === "login" ? "Enter" : "Create account"}</button>
+          {error && <div className="error-msg">{error}</div>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Tracker ─────────────────────────────────────────────────────────────────
+
+function TrackerView({ nav, setNav, solved, solutions, onOpenProblem, getSolvedCount, getCompTotal }) {
+  if (nav.comp && nav.year) {
+    const comp = COMPETITIONS.find(c => c.id === nav.comp);
+    const n = PROBLEMS_COUNT[nav.comp] || 6;
+    return (
+      <div>
+        <Breadcrumb items={[
+          { label: "Competitions", onClick: () => setNav({ comp: null, year: null }) },
+          { label: comp.name, onClick: () => setNav({ comp: nav.comp, year: null }) },
+          { label: nav.year, current: true },
+        ]} />
+        <div className="section-header">
+          <div className="section-title">{comp.flag} {comp.name} — {nav.year}</div>
+          <div className="section-sub">{getSolvedCount(nav.comp, nav.year)} / {n} problems solved · click a problem to open</div>
+        </div>
+        <div className="problem-grid">
+          {Array.from({ length: n }, (_, i) => i + 1).map(num => {
+            const key = `${nav.comp}-${nav.year}-${num}`;
+            const done = !!solved[key];
+            const hasSol = !!solutions[key];
+            return (
+              <div key={num} className={`problem-card ${done ? "done" : ""}`} onClick={() => onOpenProblem({ compId: nav.comp, year: nav.year, num })}>
+                {hasSol && <div className="solution-badge">{solutions[key].type === "image" ? "📷" : "🔗"} solution</div>}
+                <div className="problem-num" style={{ color: done ? "var(--success)" : "var(--text)" }}>{num}</div>
+                <div className="problem-label">Problem</div>
+                <div className="problem-check">{done ? "✓" : "○"}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (nav.comp) {
+    const comp = COMPETITIONS.find(c => c.id === nav.comp);
+    const n = PROBLEMS_COUNT[nav.comp] || 6;
+    return (
+      <div>
+        <Breadcrumb items={[
+          { label: "Competitions", onClick: () => setNav({ comp: null, year: null }) },
+          { label: comp.name, current: true },
+        ]} />
+        <div className="section-header">
+          <div className="section-title">{comp.flag} {comp.fullName}</div>
+          <div className="section-sub">Select a year</div>
+        </div>
+        <div className="year-grid">
+          {YEARS.map(year => {
+            const done = getSolvedCount(nav.comp, year);
+            return (
+              <div key={year} className="year-card" onClick={() => setNav({ ...nav, year })}>
+                <div className="year-num">{year}</div>
+                <div className="year-done">{done}/{n} solved</div>
+                <div className="year-dots">
+                  {Array.from({ length: n }, (_, i) => i + 1).map(num => {
+                    const key = `${nav.comp}-${year}-${num}`;
+                    const hasSol = !!solutions[key];
+                    return <div key={num} className={`dot ${solved[key] ? "done" : ""} ${hasSol ? "has-solution" : ""}`} />;
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const totalSolved = Object.values(solved).filter(Boolean).length;
+  return (
+    <div>
+      <div className="section-header">
+        <div className="section-title">Competitions</div>
+        <div className="section-sub">{totalSolved} problems solved across all olympiads</div>
+      </div>
+      <div className="comp-grid">
+        {COMPETITIONS.map(comp => {
+          const done = getCompTotal(comp.id);
+          const total = (PROBLEMS_COUNT[comp.id] || 6) * YEARS.length;
+          const pct = Math.round(done / total * 100);
+          return (
+            <div key={comp.id} className="comp-card" onClick={() => setNav({ comp: comp.id, year: null })}>
+              <div className="comp-flag">{comp.flag}</div>
+              <div className="comp-name">{comp.name}</div>
+              <div className="comp-full">{comp.fullName}</div>
+              <div className="comp-progress">
+                <div className="progress-label"><span>{done} solved</span><span>{pct}%</span></div>
+                <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+
+function LeaderboardView({ users, me }) {
+  const rankStyle = (i) => i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+  const medal = (i) => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+  return (
+    <div>
+      <div className="section-header">
+        <div className="section-title">Leaderboard</div>
+        <div className="section-sub">{users.length} registered solvers</div>
+      </div>
+      <div className="leaderboard">
+        <div className="lb-header">
+          <span>Rank</span><span>Solver</span>
+          <span style={{ textAlign: "right" }}>Total</span>
+          <span style={{ textAlign: "right" }}>IMO</span>
+          <span style={{ textAlign: "right" }}>OBMEP</span>
+          <span style={{ textAlign: "right" }}>USAMO</span>
+        </div>
+        {users.length === 0 && <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>No solvers yet. Be the first!</div>}
+        {users.map((u, i) => (
+          <div key={u.username} className={`lb-row ${u.username === me ? "lb-me" : ""}`}>
+            <div className={`lb-rank ${rankStyle(i)}`}>{medal(i) || `#${i + 1}`}</div>
+            <div className="lb-name">{u.username} {u.username === me && <span style={{ color: "var(--accent2)", fontSize: "0.7rem" }}>← you</span>}</div>
+            <div className="lb-score">{u.total || 0}</div>
+            <div className="lb-stat">—</div><div className="lb-stat">—</div><div className="lb-stat">—</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+
+function ProfileView({ username, solved, solutions }) {
+  const total = Object.values(solved).filter(Boolean).length;
+  const solCount = Object.keys(solutions).length;
+  const compStats = COMPETITIONS.map(c => ({
+    ...c,
+    done: Object.keys(solved).filter(k => k.startsWith(c.id) && solved[k]).length
+  })).sort((a, b) => b.done - a.done);
+  const years = [...new Set(Object.keys(solved).filter(k => solved[k]).map(k => k.split("-")[1]))].length;
+
+  return (
+    <div>
+      <div className="section-header">
+        <div className="section-title">⬡ {username}</div>
+        <div className="section-sub">Your solving progress</div>
+      </div>
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-value">{total}</div><div className="stat-label">Problems Solved</div></div>
+        <div className="stat-card"><div className="stat-value">{solCount}</div><div className="stat-label">Solutions Attached</div></div>
+        <div className="stat-card"><div className="stat-value">{compStats.filter(c => c.done > 0).length}</div><div className="stat-label">Competitions</div></div>
+        <div className="stat-card"><div className="stat-value">{years}</div><div className="stat-label">Years Covered</div></div>
+      </div>
+      <div className="section-title" style={{ marginBottom: "1rem", fontSize: "1.1rem" }}>By Competition</div>
+      <div className="leaderboard">
+        {compStats.map(c => {
+          const t = (PROBLEMS_COUNT[c.id] || 6) * YEARS.length;
+          const pct = Math.round(c.done / t * 100);
+          return (
+            <div key={c.id} className="lb-row">
+              <div style={{ fontSize: "1.5rem" }}>{c.flag}</div>
+              <div>
+                <div style={{ fontWeight: 500 }}>{c.name}</div>
+                <div className="progress-bar" style={{ width: 200, marginTop: 6 }}>
+                  <div className="progress-fill" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <div className="lb-score">{c.done}</div>
+              <div className="lb-stat">{pct}%</div>
+              <div className="lb-stat"></div>
+              <div className="lb-stat"></div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Breadcrumb ───────────────────────────────────────────────────────────────
+
+function Breadcrumb({ items }) {
+  return (
+    <div className="breadcrumb">
+      {items.map((item, i) => (
+        <span key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {i > 0 && <span className="breadcrumb-sep">/</span>}
+          {item.current
+            ? <span className="breadcrumb-current">{item.label}</span>
+            : <span className="breadcrumb-item" onClick={item.onClick}>{item.label}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
