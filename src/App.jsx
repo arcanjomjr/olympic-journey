@@ -86,7 +86,26 @@ const css = `
     sans-serif;
   min-height: 100vh;
 }
+
+.emoji {
+  font-family:
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    sans-serif !important;
+}
   .app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.comp-flag {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+
+  font-family:
+    "Segoe UI Emoji",
+    "Apple Color Emoji",
+    "Noto Color Emoji",
+    sans-serif !important;
+}
 
   .header {
     background: linear-gradient(135deg, #0a0a0f 0%, #12121a 100%);
