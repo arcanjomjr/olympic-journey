@@ -104,7 +104,6 @@ const css = `
 
   .content { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
 
-  /* Auth */
   .auth-wrap {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     background: var(--bg);
@@ -125,16 +124,13 @@ const css = `
     display: flex; align-items: center; justify-content: center; gap: 12px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
-  .btn-google:hover { background: #f5f5f5; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .btn-google:hover { background: #f5f5f5; transform: translateY(-1px); }
   .google-icon { width: 20px; height: 20px; }
-  .error-msg { color: var(--danger); font-size: 0.78rem; margin-top: 1rem; }
 
-  /* Loading */
   .loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
   .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Breadcrumb */
   .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; color: var(--muted); font-size: 0.78rem; }
   .breadcrumb-item { cursor: pointer; transition: color 0.2s; }
   .breadcrumb-item:hover { color: var(--accent); }
@@ -145,7 +141,6 @@ const css = `
   .section-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; }
   .section-sub { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
 
-  /* Competition Grid */
   .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
   .comp-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -167,7 +162,6 @@ const css = `
   .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 2px; transition: width 0.5s; }
   .progress-label { font-size: 0.7rem; color: var(--muted); display: flex; justify-content: space-between; }
 
-  /* Year Grid */
   .year-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
   .year-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -182,17 +176,13 @@ const css = `
   .dot.done { background: var(--success); box-shadow: 0 0 6px rgba(64,208,128,0.5); }
   .dot.has-solution { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  /* Problem Grid */
   .problem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
   .problem-card {
     background: var(--surface); border: 2px solid var(--border);
     border-radius: var(--radius); padding: 1.5rem; cursor: pointer;
     transition: all 0.25s; text-align: center; position: relative;
   }
-  .problem-card.done {
-    border-color: var(--success);
-    background: linear-gradient(135deg, rgba(64,208,128,0.08), var(--surface));
-  }
+  .problem-card.done { border-color: var(--success); background: linear-gradient(135deg, rgba(64,208,128,0.08), var(--surface)); }
   .problem-card:not(.done):hover { border-color: var(--accent2); transform: scale(1.03); }
   .problem-card.done:hover { transform: scale(1.03); }
   .problem-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; }
@@ -205,7 +195,6 @@ const css = `
     font-size: 0.62rem; padding: 2px 7px; font-weight: 700; letter-spacing: 0.5px;
   }
 
-  /* Leaderboard */
   .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .lb-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr 100px; gap: 1rem; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   .lb-row { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; }
@@ -220,13 +209,11 @@ const css = `
   .lb-score { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--accent); text-align: right; }
   .lb-me { background: rgba(96,96,240,0.06); }
 
-  /* Profile */
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
   .stat-value { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; color: var(--accent); }
   .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
-  /* Toast */
   .toast {
     position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
     background: var(--success); color: #000; border-radius: 10px;
@@ -235,7 +222,6 @@ const css = `
   }
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
 
-  /* Modal */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500;
     display: flex; align-items: center; justify-content: center;
@@ -244,10 +230,9 @@ const css = `
   @keyframes fadeIn { from { opacity: 0; } }
   .modal {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 20px; width: 520px; max-width: calc(100vw - 2rem);
+    border-radius: 20px; width: 500px; max-width: calc(100vw - 2rem);
     max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
-    animation: popIn 0.2s ease;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6); animation: popIn 0.2s ease;
   }
   @keyframes popIn { from { transform: scale(0.95); opacity: 0; } }
   .modal-header {
@@ -267,16 +252,14 @@ const css = `
   .solve-toggle {
     display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem;
     background: var(--surface2); border-radius: 12px; cursor: pointer;
-    border: 2px solid var(--border); transition: all 0.2s; margin-bottom: 1.5rem;
-    user-select: none;
+    border: 2px solid var(--border); transition: all 0.2s; margin-bottom: 1.5rem; user-select: none;
   }
   .solve-toggle.done { border-color: var(--success); background: rgba(64,208,128,0.07); }
   .solve-toggle:hover { border-color: var(--accent2); }
   .solve-toggle.done:hover { border-color: var(--success); filter: brightness(1.05); }
   .toggle-circle {
     width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    font-size: 0.9rem; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.9rem; transition: all 0.2s;
   }
   .solve-toggle.done .toggle-circle { border-color: var(--success); background: var(--success); color: #000; }
   .toggle-text { flex: 1; }
@@ -290,39 +273,13 @@ const css = `
   }
   .solution-divider::before, .solution-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .sol-type-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
-  .sol-type-btn {
-    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
-    background: none; color: var(--muted); font-size: 0.78rem; cursor: pointer;
-    font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
-  }
-  .sol-type-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(96,96,240,0.08); }
-
+  .sol-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
   .sol-input {
     width: 100%; background: var(--surface2); border: 1px solid var(--border);
     color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem;
-    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s;
-    margin-bottom: 0.8rem;
+    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s; margin-bottom: 0.8rem;
   }
   .sol-input:focus { border-color: var(--accent2); }
-
-  .drop-zone {
-    border: 2px dashed var(--border); border-radius: 12px;
-    padding: 2rem; text-align: center; cursor: pointer;
-    transition: all 0.2s; margin-bottom: 0.8rem; position: relative;
-  }
-  .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent2); background: rgba(96,96,240,0.05); }
-  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .drop-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-  .drop-text { font-size: 0.82rem; color: var(--muted); }
-  .drop-hint { font-size: 0.7rem; color: var(--border); margin-top: 6px; }
-
-  .img-preview { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 0.8rem; }
-  .img-preview img { width: 100%; max-height: 300px; object-fit: contain; background: #060609; display: block; }
-  .img-preview-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; background: var(--surface2); font-size: 0.72rem; color: var(--muted);
-  }
 
   .link-preview {
     display: flex; align-items: center; gap: 10px; padding: 10px 14px;
@@ -354,33 +311,10 @@ const css = `
   }
   .btn-ghost:hover { color: var(--text); border-color: var(--text); }
 
-  .size-warning { color: var(--danger); font-size: 0.75rem; margin-top: 6px; }
-
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 `;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function compressImage(file, maxWidth = 1200, quality = 0.7) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(1, maxWidth / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
@@ -402,9 +336,7 @@ export default function App() {
         await loadUserData(firebaseUser.uid);
         await loadLeaderboard();
       } else {
-        setUser(null);
-        setSolved({});
-        setSolutions({});
+        setUser(null); setSolved({}); setSolutions({});
       }
       setAuthLoading(false);
     });
@@ -427,8 +359,7 @@ export default function App() {
   }
 
   function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
+    setToast(msg); setTimeout(() => setToast(null), 2200);
   }
 
   async function handleGoogleLogin() {
@@ -439,73 +370,38 @@ export default function App() {
       const snap = await getDoc(userRef);
       if (!snap.exists()) {
         await setDoc(userRef, {
-          displayName: u.displayName,
-          photoURL: u.photoURL,
-          email: u.email,
-          total: 0,
-          solved: {},
-          solutions: {},
-          joined: Date.now(),
+          displayName: u.displayName, photoURL: u.photoURL,
+          email: u.email, total: 0, solved: {}, solutions: {}, joined: Date.now(),
         });
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   async function handleLogout() {
-    await signOut(auth);
-    setNav({ comp: null, year: null });
-    setView("tracker");
+    await signOut(auth); setNav({ comp: null, year: null }); setView("tracker");
   }
 
-  async function saveProblem({ compId, year, num, isDone, solution }) {
+  async function saveProblem({ compId, year, num, isDone, link }) {
     const key = `${compId}-${year}-${num}`;
     const prevDone = !!solved[key];
-
     const newSolved = { ...solved, [key]: isDone };
     const newSolutions = { ...solutions };
 
-    if (solution) {
-      newSolutions[key] = solution;
-    } else {
-      delete newSolutions[key];
-    }
+    if (link) newSolutions[key] = { type: "link", data: link };
+    else delete newSolutions[key];
 
     const total = Object.values(newSolved).filter(Boolean).length;
-
-    // Store solutions separately per problem to avoid doc size limits
     const userRef = doc(db, "users", user.uid);
-    const solRef = doc(db, "solutions", `${user.uid}_${key}`);
+    await updateDoc(userRef, { solved: newSolved, solutions: newSolutions, total });
 
-    if (solution) {
-      await setDoc(solRef, { uid: user.uid, key, solution });
-    }
-
-    await updateDoc(userRef, { solved: newSolved, total });
-
-    setSolved(newSolved);
-    setSolutions(newSolutions);
-
+    setSolved(newSolved); setSolutions(newSolutions);
     if (isDone && !prevDone) showToast(`✓ Problem ${num} marked as solved!`);
     else if (!isDone && prevDone) showToast(`Problem ${num} unmarked.`);
-    else if (solution?.type === "image") showToast("📷 Solution image saved!");
-    else if (solution?.type === "link") showToast("🔗 Solution link saved!");
+    else if (link) showToast("🔗 Solution link saved!");
     else showToast("Saved.");
 
     await loadLeaderboard();
     setModalProblem(null);
-  }
-
-  async function loadSolutionForProblem(compId, year, num) {
-    const key = `${compId}-${year}-${num}`;
-    if (solutions[key]) return; // already loaded
-    try {
-      const snap = await getDoc(doc(db, "solutions", `${user.uid}_${key}`));
-      if (snap.exists()) {
-        setSolutions(prev => ({ ...prev, [key]: snap.data().solution }));
-      }
-    } catch {}
   }
 
   function getSolvedCount(compId, year) {
@@ -518,10 +414,7 @@ export default function App() {
   }
 
   if (authLoading) return (
-    <>
-      <style>{css}</style>
-      <div className="loading-wrap"><div className="spinner" /></div>
-    </>
+    <><style>{css}</style><div className="loading-wrap"><div className="spinner" /></div></>
   );
 
   if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} />;
@@ -544,24 +437,18 @@ export default function App() {
         </header>
         <div className="content">
           {view === "tracker" && (
-            <TrackerView
-              nav={nav} setNav={setNav}
-              solved={solved} solutions={solutions}
-              onOpenProblem={(p) => { loadSolutionForProblem(p.compId, p.year, p.num); setModalProblem(p); }}
-              getSolvedCount={getSolvedCount}
-              getCompTotal={getCompTotal}
-            />
+            <TrackerView nav={nav} setNav={setNav} solved={solved} solutions={solutions}
+              onOpenProblem={setModalProblem} getSolvedCount={getSolvedCount} getCompTotal={getCompTotal} />
           )}
           {view === "leaderboard" && <LeaderboardView users={allUsers} me={user.uid} />}
           {view === "profile" && <ProfileView user={user} solved={solved} solutions={solutions} />}
         </div>
       </div>
-
       {modalProblem && (
         <ProblemModal
           {...modalProblem}
           isDone={!!solved[`${modalProblem.compId}-${modalProblem.year}-${modalProblem.num}`]}
-          solution={solutions[`${modalProblem.compId}-${modalProblem.year}-${modalProblem.num}`]}
+          existingLink={solutions[`${modalProblem.compId}-${modalProblem.year}-${modalProblem.num}`]?.data || ""}
           onSave={saveProblem}
           onClose={() => setModalProblem(null)}
         />
@@ -571,72 +458,40 @@ export default function App() {
   );
 }
 
-// ─── Auth Screen ─────────────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 
 function AuthScreen({ onGoogleLogin }) {
   return (
-    <>
-      <style>{css}</style>
-      <div className="auth-wrap">
-        <div className="auth-card">
-          <div className="auth-title">Olympic Journey</div>
-          <div className="auth-sub">Track your olympiad problem solving journey.<br />Sign in to get started.</div>
-          <button className="btn-google" onClick={onGoogleLogin}>
-            <svg className="google-icon" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </button>
-        </div>
+    <><style>{css}</style>
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-title">Olympic Journey</div>
+        <div className="auth-sub">Track your olympiad problem solving journey.<br />Sign in to get started.</div>
+        <button className="btn-google" onClick={onGoogleLogin}>
+          <svg className="google-icon" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
       </div>
-    </>
+    </div></>
   );
 }
 
 // ─── Problem Modal ────────────────────────────────────────────────────────────
 
-function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolution, onSave, onClose }) {
+function ProblemModal({ compId, year, num, isDone: initDone, existingLink, onSave, onClose }) {
   const comp = COMPETITIONS.find(c => c.id === compId);
   const [isDone, setIsDone] = useState(initDone);
-  const [solType, setSolType] = useState(initSolution?.type || "image");
-  const [linkVal, setLinkVal] = useState(initSolution?.type === "link" ? initSolution.data : "");
-  const [imageData, setImageData] = useState(initSolution?.type === "image" ? initSolution.data : null);
-  const [imageName, setImageName] = useState(initSolution?.type === "image" ? (initSolution.name || "") : "");
-  const [drag, setDrag] = useState(false);
+  const [linkVal, setLinkVal] = useState(existingLink || "");
   const [saving, setSaving] = useState(false);
-  const [sizeWarning, setSizeWarning] = useState(false);
-
-  async function handleFile(file) {
-    if (!file || !file.type.startsWith("image/")) return;
-    setSizeWarning(false);
-    const compressed = await compressImage(file);
-    // Firestore doc limit is 1MB, warn if too large
-    if (compressed.length > 900000) {
-      setSizeWarning(true);
-      return;
-    }
-    setImageData(compressed);
-    setImageName(file.name);
-  }
-
-  function handleRemove() {
-    setImageData(null); setImageName(""); setLinkVal(""); setSizeWarning(false);
-  }
 
   async function handleSave() {
     setSaving(true);
-    let solution = null;
-    if (solType === "image" && imageData) {
-      solution = { type: "image", data: imageData, name: imageName };
-    } else if (solType === "link" && linkVal.trim()) {
-      solution = { type: "link", data: linkVal.trim() };
-    } else if (initSolution && solType === initSolution.type) {
-      solution = initSolution; // keep existing if unchanged
-    }
-    await onSave({ compId, year, num, isDone, solution });
+    await onSave({ compId, year, num, isDone, link: linkVal.trim() || null });
     setSaving(false);
   }
 
@@ -659,56 +514,20 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
             </div>
           </div>
 
-          <div className="solution-divider">Attach solution (optional)</div>
-
-          <div className="sol-type-tabs">
-            <button className={`sol-type-btn ${solType === "image" ? "active" : ""}`} onClick={() => setSolType("image")}>📷 Image</button>
-            <button className={`sol-type-btn ${solType === "link" ? "active" : ""}`} onClick={() => setSolType("link")}>🔗 Link</button>
-          </div>
-
-          {solType === "image" && (
-            imageData ? (
-              <div className="img-preview">
-                <img src={imageData} alt="solution" />
-                <div className="img-preview-bar">
-                  <span>{imageName}</span>
-                  <button className="btn-remove" onClick={handleRemove}>Remove</button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div
-                  className={`drop-zone ${drag ? "dragging" : ""}`}
-                  onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                  onDragLeave={() => setDrag(false)}
-                  onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}
-                >
-                  <input type="file" accept="image/*" onChange={e => handleFile(e.target.files[0])} />
-                  <div className="drop-icon">🖼️</div>
-                  <div className="drop-text">Drop an image or click to browse</div>
-                  <div className="drop-hint">PNG, JPG, WEBP · will be compressed automatically</div>
-                </div>
-                {sizeWarning && <div className="size-warning">⚠️ Image is too large even after compression. Please use a smaller image or a link instead.</div>}
-              </>
-            )
-          )}
-
-          {solType === "link" && (
-            <>
-              <input
-                className="sol-input"
-                placeholder="https://artofproblemsolving.com/..."
-                value={linkVal}
-                onChange={e => setLinkVal(e.target.value)}
-              />
-              {linkVal.trim() && (
-                <div className="link-preview">
-                  <span>🔗</span>
-                  <a href={linkVal} target="_blank" rel="noopener noreferrer">{linkVal}</a>
-                  <button className="btn-remove" onClick={handleRemove}>Remove</button>
-                </div>
-              )}
-            </>
+          <div className="solution-divider">Solution link (optional)</div>
+          <div className="sol-label">Paste a link to your solution (AoPS, Google Drive, Overleaf, etc.)</div>
+          <input
+            className="sol-input"
+            placeholder="https://artofproblemsolving.com/..."
+            value={linkVal}
+            onChange={e => setLinkVal(e.target.value)}
+          />
+          {linkVal.trim() && (
+            <div className="link-preview">
+              <span>🔗</span>
+              <a href={linkVal} target="_blank" rel="noopener noreferrer">{linkVal}</a>
+              <button className="btn-remove" onClick={() => setLinkVal("")}>Remove</button>
+            </div>
           )}
 
           <div className="modal-actions">
@@ -743,11 +562,10 @@ function TrackerView({ nav, setNav, solved, solutions, onOpenProblem, getSolvedC
         <div className="problem-grid">
           {Array.from({ length: n }, (_, i) => i + 1).map(num => {
             const key = `${nav.comp}-${nav.year}-${num}`;
-            const done = !!solved[key];
-            const hasSol = !!solutions[key];
+            const done = !!solved[key]; const hasSol = !!solutions[key];
             return (
               <div key={num} className={`problem-card ${done ? "done" : ""}`} onClick={() => onOpenProblem({ compId: nav.comp, year: nav.year, num })}>
-                {hasSol && <div className="solution-badge">{solutions[key].type === "image" ? "📷" : "🔗"} solution</div>}
+                {hasSol && <div className="solution-badge">🔗 solution</div>}
                 <div className="problem-num" style={{ color: done ? "var(--success)" : "var(--text)" }}>{num}</div>
                 <div className="problem-label">Problem</div>
                 <div className="problem-check">{done ? "✓" : "○"}</div>
@@ -834,9 +652,7 @@ function LeaderboardView({ users, me }) {
         <div className="section-sub">{users.length} registered solvers</div>
       </div>
       <div className="leaderboard">
-        <div className="lb-header">
-          <span>Rank</span><span>Solver</span><span style={{ textAlign: "right" }}>Total</span>
-        </div>
+        <div className="lb-header"><span>Rank</span><span>Solver</span><span style={{ textAlign: "right" }}>Total</span></div>
         {users.length === 0 && <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>No solvers yet. Be the first!</div>}
         {users.map((u, i) => (
           <div key={u.uid} className={`lb-row ${u.uid === me ? "lb-me" : ""}`}>
@@ -860,8 +676,7 @@ function ProfileView({ user, solved, solutions }) {
   const total = Object.values(solved).filter(Boolean).length;
   const solCount = Object.keys(solutions).length;
   const compStats = COMPETITIONS.map(c => ({
-    ...c,
-    done: Object.keys(solved).filter(k => k.startsWith(c.id) && solved[k]).length
+    ...c, done: Object.keys(solved).filter(k => k.startsWith(c.id) && solved[k]).length
   })).sort((a, b) => b.done - a.done);
   const years = [...new Set(Object.keys(solved).filter(k => solved[k]).map(k => k.split("-")[1]))].length;
 
@@ -876,7 +691,7 @@ function ProfileView({ user, solved, solutions }) {
       </div>
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-value">{total}</div><div className="stat-label">Problems Solved</div></div>
-        <div className="stat-card"><div className="stat-value">{solCount}</div><div className="stat-label">Solutions Attached</div></div>
+        <div className="stat-card"><div className="stat-value">{solCount}</div><div className="stat-label">Solutions Linked</div></div>
         <div className="stat-card"><div className="stat-value">{compStats.filter(c => c.done > 0).length}</div><div className="stat-label">Competitions</div></div>
         <div className="stat-card"><div className="stat-value">{years}</div><div className="stat-label">Years Covered</div></div>
       </div>
