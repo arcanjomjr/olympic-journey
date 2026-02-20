@@ -74,7 +74,18 @@ const css = `
     --radius: 12px;
   }
 
-  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; min-height: 100vh; }
+  body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    'JetBrains Mono',
+    monospace,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Noto Color Emoji",
+    sans-serif;
+  min-height: 100vh;
+}
   .app { min-height: 100vh; display: flex; flex-direction: column; }
 
   .header {
