@@ -39,12 +39,12 @@ const googleProvider = new GoogleAuthProvider();
 const COMPETITIONS = [
   { id: "imo", name: "IMO", fullName: "International Mathematical Olympiad", flag: "🌍" },
   { id: "conesul", name: "Cone Sul", fullName: "Olimpíada de Matemática do Cone Sul", flag: "🇸🇦" },
-  { id: "obn", name: "OBMEP", fullName: "Olimpíada Brasileira de Matemática", flag: "🇧🇷" },
+  { id: "obn", name: "OBM", fullName: "Olimpíada Brasileira de Matemática", flag: "🇧🇷" },
   { id: "cno", name: "China MO", fullName: "Chinese Mathematical Olympiad", flag: "🇨🇳" },
   { id: "usamo", name: "USAMO", fullName: "United States of America MO", flag: "🇺🇸" },
   { id: "putnam", name: "Putnam", fullName: "William Lowell Putnam Competition", flag: "🎓" },
   { id: "balkan", name: "Balkan MO", fullName: "Balkan Mathematical Olympiad", flag: "🏛️" },
-  { id: "ibero", name: "Ibero MO", fullName: "Iberoamerican Mathematical Olympiad", flag: "🌎" },
+  { id: "ibero", name: "Ibero", fullName: "Iberoamerican Mathematical Olympiad", flag: "🌎" },
 ];
 
 const YEARS = Array.from({ length: 30 }, (_, i) => 2024 - i);
