@@ -1,4 +1,46 @@
 import { useState, useEffect, useRef } from "react";
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+
+// ─── Firebase ────────────────────────────────────────────────────────────────
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBFpRNhk0klzDKMBBvjtIMgKtxo4B34ijc",
+  authDomain: "olympic-journey.firebaseapp.com",
+  projectId: "olympic-journey",
+  storageBucket: "olympic-journey.firebasestorage.app",
+  messagingSenderId: "35516591680",
+  appId: "1:35516591680:web:a8e0e7dc959d0d1d0ff9a5",
+  measurementId: "G-7CWE8M4Z2E",
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -51,14 +93,15 @@ const css = `
     height: 64px; position: sticky; top: 0; z-index: 100;
   }
   .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
-  .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; vertical-align: middle; }
   .header-right { display: flex; align-items: center; gap: 1rem; }
   .user-chip {
+    display: flex; align-items: center; gap: 8px;
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 999px; padding: 6px 14px;
+    border-radius: 999px; padding: 5px 14px 5px 5px;
     font-size: 0.78rem; color: var(--accent); cursor: pointer; transition: all 0.2s;
   }
   .user-chip:hover { border-color: var(--accent); }
+  .user-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
   .nav-btn {
     background: none; border: 1px solid var(--border); color: var(--muted);
     border-radius: 8px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer;
@@ -78,33 +121,26 @@ const css = `
   }
   .auth-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 20px; padding: 3rem; width: 380px;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    border-radius: 20px; padding: 3rem; width: 400px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5); text-align: center;
   }
-  .auth-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.3rem; }
-  .auth-sub { color: var(--muted); font-size: 0.8rem; margin-bottom: 2rem; }
-  .auth-tabs { display: flex; margin-bottom: 2rem; background: var(--surface2); border-radius: 8px; padding: 4px; }
-  .auth-tab {
-    flex: 1; padding: 8px; text-align: center; cursor: pointer; border-radius: 6px;
-    font-size: 0.8rem; color: var(--muted); transition: all 0.2s; border: none; background: none;
-    font-family: 'JetBrains Mono', monospace;
+  .auth-title { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 900; margin-bottom: 0.4rem; color: var(--accent); }
+  .auth-sub { color: var(--muted); font-size: 0.82rem; margin-bottom: 2.5rem; line-height: 1.6; }
+  .btn-google {
+    width: 100%; padding: 14px; background: #fff; color: #1a1a1a;
+    border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
-  .auth-tab.active { background: var(--accent); color: #000; font-weight: 500; }
-  .field { margin-bottom: 1.2rem; }
-  .field label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
-  .field input {
-    width: 100%; background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 8px; padding: 10px 14px; font-size: 0.9rem;
-    font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.2s;
-  }
-  .field input:focus { border-color: var(--accent2); }
-  .btn-primary {
-    width: 100%; padding: 12px; background: var(--accent); color: #000;
-    border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; letter-spacing: 0.5px;
-  }
-  .btn-primary:hover { background: #f5d060; transform: translateY(-1px); }
-  .error-msg { color: var(--danger); font-size: 0.78rem; margin-top: 1rem; text-align: center; }
+  .btn-google:hover { background: #f5f5f5; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .google-icon { width: 20px; height: 20px; }
+  .error-msg { color: var(--danger); font-size: 0.78rem; margin-top: 1rem; }
+
+  /* Loading */
+  .loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* Breadcrumb */
   .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; color: var(--muted); font-size: 0.78rem; }
@@ -179,17 +215,17 @@ const css = `
 
   /* Leaderboard */
   .leaderboard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .lb-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr repeat(4,80px); gap: 1rem; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .lb-row { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr repeat(4,80px); gap: 1rem; align-items: center; transition: background 0.2s; }
+  .lb-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr 100px; gap: 1rem; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .lb-row { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 50px 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; }
   .lb-row:hover { background: var(--surface2); }
   .lb-row:last-child { border-bottom: none; }
   .lb-rank { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--muted); }
   .lb-rank.gold { color: #f0c040; }
   .lb-rank.silver { color: #c0c0d0; }
   .lb-rank.bronze { color: #c08040; }
-  .lb-name { font-weight: 500; }
+  .lb-name { font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  .lb-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
   .lb-score { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--accent); text-align: right; }
-  .lb-stat { font-size: 0.8rem; color: var(--muted); text-align: right; }
   .lb-me { background: rgba(96,96,240,0.06); }
 
   /* Profile */
@@ -223,8 +259,7 @@ const css = `
   }
   @keyframes popIn { from { transform: scale(0.95); opacity: 0; } }
   .modal-header {
-    padding: 1.8rem 2rem 1.2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.8rem 2rem 1.2rem; border-bottom: 1px solid var(--border);
     display: flex; align-items: flex-start; justify-content: space-between;
   }
   .modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
@@ -261,9 +296,7 @@ const css = `
     letter-spacing: 1px; margin-bottom: 1rem;
     display: flex; align-items: center; gap: 12px;
   }
-  .solution-divider::before, .solution-divider::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-  }
+  .solution-divider::before, .solution-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   .sol-type-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
   .sol-type-btn {
@@ -321,6 +354,7 @@ const css = `
     cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.2s;
   }
   .btn-save:hover { background: #7575ff; }
+  .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-ghost {
     padding: 10px 16px; background: none; color: var(--muted);
     border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem;
@@ -333,20 +367,11 @@ const css = `
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 `;
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-async function storageGet(key, shared = false) {
-  try { const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
-  catch { return null; }
-}
-async function storageSet(key, val, shared = false) {
-  try { await window.storage.set(key, JSON.stringify(val), shared); } catch {}
-}
-
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [view, setView] = useState("tracker");
   const [solved, setSolved] = useState({});
   const [solutions, setSolutions] = useState({});
@@ -355,21 +380,36 @@ export default function App() {
   const [allUsers, setAllUsers] = useState([]);
   const [modalProblem, setModalProblem] = useState(null);
 
+  // Listen for auth state
   useEffect(() => {
-    storageGet("session").then(s => { if (s) { setUser(s); loadUserData(s.username); } });
-    loadLeaderboard();
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        await loadUserData(firebaseUser.uid);
+        await loadLeaderboard();
+      } else {
+        setUser(null);
+        setSolved({});
+        setSolutions({});
+      }
+      setAuthLoading(false);
+    });
+    return unsub;
   }, []);
 
-  async function loadUserData(username) {
-    const s = await storageGet(`solved:${username}`);
-    const sol = await storageGet(`solutions:${username}`);
-    setSolved(s || {});
-    setSolutions(sol || {});
+  async function loadUserData(uid) {
+    const snap = await getDoc(doc(db, "users", uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      setSolved(data.solved || {});
+      setSolutions(data.solutions || {});
+    }
   }
 
   async function loadLeaderboard() {
-    const users = await storageGet("users", true);
-    if (users) setAllUsers(users);
+    const snap = await getDocs(collection(db, "users"));
+    const users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    setAllUsers(users.sort((a, b) => (b.total || 0) - (a.total || 0)));
   }
 
   function showToast(msg) {
@@ -377,58 +417,78 @@ export default function App() {
     setTimeout(() => setToast(null), 2200);
   }
 
-  async function handleLogin(username, password, isRegister) {
-    const users = (await storageGet("users", true)) || [];
-    const existing = users.find(u => u.username === username);
-    if (isRegister) {
-      if (existing) return "Username already taken";
-      const newUsers = [...users, { username, password, joined: Date.now() }];
-      await storageSet("users", newUsers, true);
-      setUser({ username });
-      await storageSet("session", { username });
-      setSolved({}); setSolutions({});
-      setAllUsers(newUsers);
-      return null;
-    } else {
-      if (!existing || existing.password !== password) return "Invalid credentials";
-      setUser({ username });
-      await storageSet("session", { username });
-      await loadUserData(username);
-      setAllUsers(users);
-      return null;
+  async function handleGoogleLogin() {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const u = result.user;
+      // Create user doc if first login
+      const ref = doc(db, "users", u.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          displayName: u.displayName,
+          photoURL: u.photoURL,
+          email: u.email,
+          total: 0,
+          solved: {},
+          solutions: {},
+          joined: Date.now(),
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
   async function handleLogout() {
-    await storageSet("session", null);
-    setUser(null); setSolved({}); setSolutions({}); setNav({ comp: null, year: null });
+    await signOut(auth);
+    setNav({ comp: null, year: null });
+    setView("tracker");
   }
 
-  async function saveProblem({ compId, year, num, isDone, solution }) {
+  async function saveProblem({ compId, year, num, isDone, solution, imageFile }) {
     const key = `${compId}-${year}-${num}`;
     const prevDone = !!solved[key];
 
     const newSolved = { ...solved, [key]: isDone };
     const newSolutions = { ...solutions };
-    if (solution) newSolutions[key] = solution;
-    else delete newSolutions[key];
+
+    // Handle image upload to Firebase Storage
+    if (imageFile) {
+      const storageRef = ref(storage, `solutions/${user.uid}/${key}`);
+      await uploadBytes(storageRef, imageFile);
+      const url = await getDownloadURL(storageRef);
+      newSolutions[key] = { type: "image", url, name: imageFile.name };
+    } else if (solution?.type === "link") {
+      newSolutions[key] = solution;
+    } else if (!solution) {
+      // Remove solution if cleared
+      if (solutions[key]?.type === "image") {
+        try {
+          await deleteObject(ref(storage, `solutions/${user.uid}/${key}`));
+        } catch {}
+      }
+      delete newSolutions[key];
+    }
+
+    const total = Object.values(newSolved).filter(Boolean).length;
+
+    await updateDoc(doc(db, "users", user.uid), {
+      solved: newSolved,
+      solutions: newSolutions,
+      total,
+    });
 
     setSolved(newSolved);
     setSolutions(newSolutions);
-    await storageSet(`solved:${user.username}`, newSolved);
-    await storageSet(`solutions:${user.username}`, newSolutions);
 
     if (isDone && !prevDone) showToast(`✓ Problem ${num} marked as solved!`);
     else if (!isDone && prevDone) showToast(`Problem ${num} unmarked.`);
-    else if (solution?.type === "image") showToast("📷 Solution image saved!");
+    else if (imageFile) showToast("📷 Solution image saved!");
     else if (solution?.type === "link") showToast("🔗 Solution link saved!");
     else showToast("Saved.");
 
-    const users = (await storageGet("users", true)) || [];
-    const total = Object.values(newSolved).filter(Boolean).length;
-    const updated = users.map(u => u.username === user.username ? { ...u, total } : u);
-    await storageSet("users", updated, true);
-    setAllUsers(updated);
+    await loadLeaderboard();
     setModalProblem(null);
   }
 
@@ -441,9 +501,14 @@ export default function App() {
     return Object.keys(solved).filter(k => k.startsWith(compId) && solved[k]).length;
   }
 
-  if (!user) return <AuthScreen onLogin={handleLogin} />;
+  if (authLoading) return (
+    <>
+      <style>{css}</style>
+      <div className="loading-wrap"><div className="spinner" /></div>
+    </>
+  );
 
-  const sorted = [...allUsers].sort((a, b) => (b.total || 0) - (a.total || 0));
+  if (!user) return <AuthScreen onGoogleLogin={handleGoogleLogin} />;
 
   return (
     <>
@@ -455,7 +520,10 @@ export default function App() {
             <button className={`nav-btn ${view === "tracker" ? "active" : ""}`} onClick={() => setView("tracker")}>Problems</button>
             <button className={`nav-btn ${view === "leaderboard" ? "active" : ""}`} onClick={() => { setView("leaderboard"); loadLeaderboard(); }}>Leaderboard</button>
             <button className={`nav-btn ${view === "profile" ? "active" : ""}`} onClick={() => setView("profile")}>Profile</button>
-            <div className="user-chip" onClick={handleLogout}>⬡ {user.username} · logout</div>
+            <div className="user-chip" onClick={handleLogout}>
+              {user.photoURL && <img className="user-avatar" src={user.photoURL} alt="" />}
+              {user.displayName?.split(" ")[0]} · logout
+            </div>
           </div>
         </header>
         <div className="content">
@@ -468,8 +536,8 @@ export default function App() {
               getCompTotal={getCompTotal}
             />
           )}
-          {view === "leaderboard" && <LeaderboardView users={sorted} me={user.username} />}
-          {view === "profile" && <ProfileView username={user.username} solved={solved} solutions={solutions} />}
+          {view === "leaderboard" && <LeaderboardView users={allUsers} me={user.uid} />}
+          {view === "profile" && <ProfileView user={user} solved={solved} solutions={solutions} />}
         </div>
       </div>
 
@@ -487,6 +555,31 @@ export default function App() {
   );
 }
 
+// ─── Auth Screen ─────────────────────────────────────────────────────────────
+
+function AuthScreen({ onGoogleLogin }) {
+  return (
+    <>
+      <style>{css}</style>
+      <div className="auth-wrap">
+        <div className="auth-card">
+          <div className="auth-title">Olympic Journey</div>
+          <div className="auth-sub">Track your olympiad problem solving journey.<br />Sign in to get started.</div>
+          <button className="btn-google" onClick={onGoogleLogin}>
+            <svg className="google-icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Problem Modal ────────────────────────────────────────────────────────────
 
 function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolution, onSave, onClose }) {
@@ -494,29 +587,33 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
   const [isDone, setIsDone] = useState(initDone);
   const [solType, setSolType] = useState(initSolution?.type || "image");
   const [linkVal, setLinkVal] = useState(initSolution?.type === "link" ? initSolution.data : "");
-  const [imageData, setImageData] = useState(initSolution?.type === "image" ? initSolution.data : null);
-  const [imageName, setImageName] = useState(initSolution?.type === "image" ? (initSolution.name || "image") : "");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(initSolution?.type === "image" ? initSolution.url : null);
+  const [imageName, setImageName] = useState(initSolution?.type === "image" ? initSolution.name : "");
   const [drag, setDrag] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cleared, setCleared] = useState(false);
 
   function handleFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = e => { setImageData(e.target.result); setImageName(file.name); };
-    reader.readAsDataURL(file);
+    setImageFile(file);
+    setImageName(file.name);
+    setImagePreview(URL.createObjectURL(file));
+    setCleared(false);
   }
 
-  function buildSolution() {
-    if (solType === "link" && linkVal.trim()) return { type: "link", data: linkVal.trim() };
-    if (solType === "image" && imageData) return { type: "image", data: imageData, name: imageName };
-    return null;
+  function handleRemove() {
+    setImageFile(null); setImagePreview(null); setImageName("");
+    setLinkVal(""); setCleared(true);
   }
 
-  function handleSave() {
-    onSave({ compId, year, num, isDone, solution: buildSolution() });
-  }
-
-  function handleRemoveSolution() {
-    setImageData(null); setImageName(""); setLinkVal("");
+  async function handleSave() {
+    setSaving(true);
+    const solution = solType === "link" && linkVal.trim()
+      ? { type: "link", data: linkVal.trim() }
+      : (!cleared && initSolution && !imageFile ? initSolution : null);
+    await onSave({ compId, year, num, isDone, solution, imageFile: imageFile || null });
+    setSaving(false);
   }
 
   return (
@@ -546,12 +643,12 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
           </div>
 
           {solType === "image" && (
-            imageData ? (
+            imagePreview ? (
               <div className="img-preview">
-                <img src={imageData} alt="solution" />
+                <img src={imagePreview} alt="solution" />
                 <div className="img-preview-bar">
                   <span>{imageName}</span>
-                  <button className="btn-remove" onClick={handleRemoveSolution}>Remove</button>
+                  <button className="btn-remove" onClick={handleRemove}>Remove</button>
                 </div>
               </div>
             ) : (
@@ -581,58 +678,21 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
                 <div className="link-preview">
                   <span>🔗</span>
                   <a href={linkVal} target="_blank" rel="noopener noreferrer">{linkVal}</a>
-                  <button className="btn-remove" onClick={handleRemoveSolution}>Remove</button>
+                  <button className="btn-remove" onClick={handleRemove}>Remove</button>
                 </div>
               )}
             </>
           )}
 
           <div className="modal-actions">
-            <button className="btn-save" onClick={handleSave}>Save</button>
+            <button className="btn-save" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </button>
             <button className="btn-ghost" onClick={onClose}>Cancel</button>
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
-function AuthScreen({ onLogin }) {
-  const [tab, setTab] = useState("login");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  async function submit() {
-    if (!username || !password) { setError("Fill in all fields"); return; }
-    const err = await onLogin(username, password, tab === "register");
-    if (err) setError(err);
-  }
-
-  return (
-    <>
-      <style>{css}</style>
-      <div className="auth-wrap">
-        <div className="auth-card">
-          <div className="auth-title">Olympic Journey</div>
-          <div className="auth-sub">Track your olympiad journey</div>
-          <div className="auth-tabs">
-            <button className={`auth-tab ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setError(""); }}>Login</button>
-            <button className={`auth-tab ${tab === "register" ? "active" : ""}`} onClick={() => { setTab("register"); setError(""); }}>Register</button>
-          </div>
-          <div className="field"><label>Username</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} placeholder="your_handle" onKeyDown={e => e.key === "Enter" && submit()} />
-          </div>
-          <div className="field"><label>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && submit()} />
-          </div>
-          <button className="btn-primary" onClick={submit}>{tab === "login" ? "Enter" : "Create account"}</button>
-          {error && <div className="error-msg">{error}</div>}
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -695,8 +755,7 @@ function TrackerView({ nav, setNav, solved, solutions, onOpenProblem, getSolvedC
                 <div className="year-dots">
                   {Array.from({ length: n }, (_, i) => i + 1).map(num => {
                     const key = `${nav.comp}-${year}-${num}`;
-                    const hasSol = !!solutions[key];
-                    return <div key={num} className={`dot ${solved[key] ? "done" : ""} ${hasSol ? "has-solution" : ""}`} />;
+                    return <div key={num} className={`dot ${solved[key] ? "done" : ""} ${solutions[key] ? "has-solution" : ""}`} />;
                   })}
                 </div>
               </div>
@@ -749,19 +808,18 @@ function LeaderboardView({ users, me }) {
       </div>
       <div className="leaderboard">
         <div className="lb-header">
-          <span>Rank</span><span>Solver</span>
-          <span style={{ textAlign: "right" }}>Total</span>
-          <span style={{ textAlign: "right" }}>IMO</span>
-          <span style={{ textAlign: "right" }}>OBMEP</span>
-          <span style={{ textAlign: "right" }}>USAMO</span>
+          <span>Rank</span><span>Solver</span><span style={{ textAlign: "right" }}>Total</span>
         </div>
         {users.length === 0 && <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>No solvers yet. Be the first!</div>}
         {users.map((u, i) => (
-          <div key={u.username} className={`lb-row ${u.username === me ? "lb-me" : ""}`}>
+          <div key={u.uid} className={`lb-row ${u.uid === me ? "lb-me" : ""}`}>
             <div className={`lb-rank ${rankStyle(i)}`}>{medal(i) || `#${i + 1}`}</div>
-            <div className="lb-name">{u.username} {u.username === me && <span style={{ color: "var(--accent2)", fontSize: "0.7rem" }}>← you</span>}</div>
+            <div className="lb-name">
+              {u.photoURL && <img className="lb-avatar" src={u.photoURL} alt="" />}
+              {u.displayName}
+              {u.uid === me && <span style={{ color: "var(--accent2)", fontSize: "0.7rem" }}>← you</span>}
+            </div>
             <div className="lb-score">{u.total || 0}</div>
-            <div className="lb-stat">—</div><div className="lb-stat">—</div><div className="lb-stat">—</div>
           </div>
         ))}
       </div>
@@ -771,7 +829,7 @@ function LeaderboardView({ users, me }) {
 
 // ─── Profile ─────────────────────────────────────────────────────────────────
 
-function ProfileView({ username, solved, solutions }) {
+function ProfileView({ user, solved, solutions }) {
   const total = Object.values(solved).filter(Boolean).length;
   const solCount = Object.keys(solutions).length;
   const compStats = COMPETITIONS.map(c => ({
@@ -783,8 +841,11 @@ function ProfileView({ username, solved, solutions }) {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">⬡ {username}</div>
-        <div className="section-sub">Your solving progress</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.3rem" }}>
+          {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 48, height: 48, borderRadius: "50%" }} />}
+          <div className="section-title">{user.displayName}</div>
+        </div>
+        <div className="section-sub">{user.email}</div>
       </div>
       <div className="stats-grid">
         <div className="stat-card"><div className="stat-value">{total}</div><div className="stat-label">Problems Solved</div></div>
@@ -807,9 +868,6 @@ function ProfileView({ username, solved, solutions }) {
                 </div>
               </div>
               <div className="lb-score">{c.done}</div>
-              <div className="lb-stat">{pct}%</div>
-              <div className="lb-stat"></div>
-              <div className="lb-stat"></div>
             </div>
           );
         })}
