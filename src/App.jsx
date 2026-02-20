@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -16,13 +16,6 @@ import {
   collection,
   getDocs,
 } from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
 
 // ─── Firebase ────────────────────────────────────────────────────────────────
 
@@ -39,7 +32,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const storage = getStorage(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 
 // ─── Data ───────────────────────────────────────────────────────────────────
@@ -362,10 +354,33 @@ const css = `
   }
   .btn-ghost:hover { color: var(--text); border-color: var(--text); }
 
+  .size-warning { color: var(--danger); font-size: 0.75rem; margin-top: 6px; }
+
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 `;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function compressImage(file, maxWidth = 1200, quality = 0.7) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
@@ -380,7 +395,6 @@ export default function App() {
   const [allUsers, setAllUsers] = useState([]);
   const [modalProblem, setModalProblem] = useState(null);
 
-  // Listen for auth state
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -421,11 +435,10 @@ export default function App() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const u = result.user;
-      // Create user doc if first login
-      const ref = doc(db, "users", u.uid);
-      const snap = await getDoc(ref);
+      const userRef = doc(db, "users", u.uid);
+      const snap = await getDoc(userRef);
       if (!snap.exists()) {
-        await setDoc(ref, {
+        await setDoc(userRef, {
           displayName: u.displayName,
           photoURL: u.photoURL,
           email: u.email,
@@ -446,50 +459,53 @@ export default function App() {
     setView("tracker");
   }
 
-  async function saveProblem({ compId, year, num, isDone, solution, imageFile }) {
+  async function saveProblem({ compId, year, num, isDone, solution }) {
     const key = `${compId}-${year}-${num}`;
     const prevDone = !!solved[key];
 
     const newSolved = { ...solved, [key]: isDone };
     const newSolutions = { ...solutions };
 
-    // Handle image upload to Firebase Storage
-    if (imageFile) {
-      const storageRef = ref(storage, `solutions/${user.uid}/${key}`);
-      await uploadBytes(storageRef, imageFile);
-      const url = await getDownloadURL(storageRef);
-      newSolutions[key] = { type: "image", url, name: imageFile.name };
-    } else if (solution?.type === "link") {
+    if (solution) {
       newSolutions[key] = solution;
-    } else if (!solution) {
-      // Remove solution if cleared
-      if (solutions[key]?.type === "image") {
-        try {
-          await deleteObject(ref(storage, `solutions/${user.uid}/${key}`));
-        } catch {}
-      }
+    } else {
       delete newSolutions[key];
     }
 
     const total = Object.values(newSolved).filter(Boolean).length;
 
-    await updateDoc(doc(db, "users", user.uid), {
-      solved: newSolved,
-      solutions: newSolutions,
-      total,
-    });
+    // Store solutions separately per problem to avoid doc size limits
+    const userRef = doc(db, "users", user.uid);
+    const solRef = doc(db, "solutions", `${user.uid}_${key}`);
+
+    if (solution) {
+      await setDoc(solRef, { uid: user.uid, key, solution });
+    }
+
+    await updateDoc(userRef, { solved: newSolved, total });
 
     setSolved(newSolved);
     setSolutions(newSolutions);
 
     if (isDone && !prevDone) showToast(`✓ Problem ${num} marked as solved!`);
     else if (!isDone && prevDone) showToast(`Problem ${num} unmarked.`);
-    else if (imageFile) showToast("📷 Solution image saved!");
+    else if (solution?.type === "image") showToast("📷 Solution image saved!");
     else if (solution?.type === "link") showToast("🔗 Solution link saved!");
     else showToast("Saved.");
 
     await loadLeaderboard();
     setModalProblem(null);
+  }
+
+  async function loadSolutionForProblem(compId, year, num) {
+    const key = `${compId}-${year}-${num}`;
+    if (solutions[key]) return; // already loaded
+    try {
+      const snap = await getDoc(doc(db, "solutions", `${user.uid}_${key}`));
+      if (snap.exists()) {
+        setSolutions(prev => ({ ...prev, [key]: snap.data().solution }));
+      }
+    } catch {}
   }
 
   function getSolvedCount(compId, year) {
@@ -521,7 +537,7 @@ export default function App() {
             <button className={`nav-btn ${view === "leaderboard" ? "active" : ""}`} onClick={() => { setView("leaderboard"); loadLeaderboard(); }}>Leaderboard</button>
             <button className={`nav-btn ${view === "profile" ? "active" : ""}`} onClick={() => setView("profile")}>Profile</button>
             <div className="user-chip" onClick={handleLogout}>
-              {user.photoURL && <img className="user-avatar" src={user.photoURL} alt="" />}
+              {user.photoURL && <img className="user-avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />}
               {user.displayName?.split(" ")[0]} · logout
             </div>
           </div>
@@ -531,7 +547,7 @@ export default function App() {
             <TrackerView
               nav={nav} setNav={setNav}
               solved={solved} solutions={solutions}
-              onOpenProblem={setModalProblem}
+              onOpenProblem={(p) => { loadSolutionForProblem(p.compId, p.year, p.num); setModalProblem(p); }}
               getSolvedCount={getSolvedCount}
               getCompTotal={getCompTotal}
             />
@@ -587,32 +603,40 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
   const [isDone, setIsDone] = useState(initDone);
   const [solType, setSolType] = useState(initSolution?.type || "image");
   const [linkVal, setLinkVal] = useState(initSolution?.type === "link" ? initSolution.data : "");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(initSolution?.type === "image" ? initSolution.url : null);
-  const [imageName, setImageName] = useState(initSolution?.type === "image" ? initSolution.name : "");
+  const [imageData, setImageData] = useState(initSolution?.type === "image" ? initSolution.data : null);
+  const [imageName, setImageName] = useState(initSolution?.type === "image" ? (initSolution.name || "") : "");
   const [drag, setDrag] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [cleared, setCleared] = useState(false);
+  const [sizeWarning, setSizeWarning] = useState(false);
 
-  function handleFile(file) {
+  async function handleFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
-    setImageFile(file);
+    setSizeWarning(false);
+    const compressed = await compressImage(file);
+    // Firestore doc limit is 1MB, warn if too large
+    if (compressed.length > 900000) {
+      setSizeWarning(true);
+      return;
+    }
+    setImageData(compressed);
     setImageName(file.name);
-    setImagePreview(URL.createObjectURL(file));
-    setCleared(false);
   }
 
   function handleRemove() {
-    setImageFile(null); setImagePreview(null); setImageName("");
-    setLinkVal(""); setCleared(true);
+    setImageData(null); setImageName(""); setLinkVal(""); setSizeWarning(false);
   }
 
   async function handleSave() {
     setSaving(true);
-    const solution = solType === "link" && linkVal.trim()
-      ? { type: "link", data: linkVal.trim() }
-      : (!cleared && initSolution && !imageFile ? initSolution : null);
-    await onSave({ compId, year, num, isDone, solution, imageFile: imageFile || null });
+    let solution = null;
+    if (solType === "image" && imageData) {
+      solution = { type: "image", data: imageData, name: imageName };
+    } else if (solType === "link" && linkVal.trim()) {
+      solution = { type: "link", data: linkVal.trim() };
+    } else if (initSolution && solType === initSolution.type) {
+      solution = initSolution; // keep existing if unchanged
+    }
+    await onSave({ compId, year, num, isDone, solution });
     setSaving(false);
   }
 
@@ -643,26 +667,29 @@ function ProblemModal({ compId, year, num, isDone: initDone, solution: initSolut
           </div>
 
           {solType === "image" && (
-            imagePreview ? (
+            imageData ? (
               <div className="img-preview">
-                <img src={imagePreview} alt="solution" />
+                <img src={imageData} alt="solution" />
                 <div className="img-preview-bar">
                   <span>{imageName}</span>
                   <button className="btn-remove" onClick={handleRemove}>Remove</button>
                 </div>
               </div>
             ) : (
-              <div
-                className={`drop-zone ${drag ? "dragging" : ""}`}
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}
-              >
-                <input type="file" accept="image/*" onChange={e => handleFile(e.target.files[0])} />
-                <div className="drop-icon">🖼️</div>
-                <div className="drop-text">Drop an image or click to browse</div>
-                <div className="drop-hint">PNG, JPG, WEBP · your solution photo or scan</div>
-              </div>
+              <>
+                <div
+                  className={`drop-zone ${drag ? "dragging" : ""}`}
+                  onDragOver={e => { e.preventDefault(); setDrag(true); }}
+                  onDragLeave={() => setDrag(false)}
+                  onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}
+                >
+                  <input type="file" accept="image/*" onChange={e => handleFile(e.target.files[0])} />
+                  <div className="drop-icon">🖼️</div>
+                  <div className="drop-text">Drop an image or click to browse</div>
+                  <div className="drop-hint">PNG, JPG, WEBP · will be compressed automatically</div>
+                </div>
+                {sizeWarning && <div className="size-warning">⚠️ Image is too large even after compression. Please use a smaller image or a link instead.</div>}
+              </>
             )
           )}
 
@@ -815,7 +842,7 @@ function LeaderboardView({ users, me }) {
           <div key={u.uid} className={`lb-row ${u.uid === me ? "lb-me" : ""}`}>
             <div className={`lb-rank ${rankStyle(i)}`}>{medal(i) || `#${i + 1}`}</div>
             <div className="lb-name">
-              {u.photoURL && <img className="lb-avatar" src={u.photoURL} alt="" />}
+              {u.photoURL && <img className="lb-avatar" src={u.photoURL} alt="" referrerPolicy="no-referrer" />}
               {u.displayName}
               {u.uid === me && <span style={{ color: "var(--accent2)", fontSize: "0.7rem" }}>← you</span>}
             </div>
@@ -842,7 +869,7 @@ function ProfileView({ user, solved, solutions }) {
     <div>
       <div className="section-header">
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.3rem" }}>
-          {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 48, height: 48, borderRadius: "50%" }} />}
+          {user.photoURL && <img src={user.photoURL} alt="" referrerPolicy="no-referrer" style={{ width: 48, height: 48, borderRadius: "50%" }} />}
           <div className="section-title">{user.displayName}</div>
         </div>
         <div className="section-sub">{user.email}</div>
